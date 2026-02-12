@@ -1,0 +1,6 @@
+@TrendSentinel.API_HostAddress = http://localhost:5063
+
+GET {{TrendSentinel.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

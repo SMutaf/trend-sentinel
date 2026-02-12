@@ -1,15 +1,38 @@
+using Microsoft.EntityFrameworkCore;
+using TrendSentinel.Application.Interfaces;
+using TrendSentinel.Application.Mappings;
+using TrendSentinel.Application.Services;
+using TrendSentinel.Domain.Interfaces;
+using TrendSentinel.Infrastructure.Persistence;
+using TrendSentinel.Infrastructure.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// --- 1. Servislerin Eklenmesi ---
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Veritabaný (PostgreSQL)
+builder.Services.AddDbContext<TrendSentinelDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Repository (Generic)
+builder.Services.AddScoped(typeof(IAsyncRepository<>), typeof(EfRepository<>));
+
+// Servisler (Application Layer)
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<INewsLogService, NewsLogService>();
+builder.Services.AddScoped<ITelegramService, TelegramService>();
+
+// AutoMapper (MappingProfile sýnýfýný referans alarak)
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// --- 2. Middleware (Ýstek Hattý) ---
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -17,9 +40,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

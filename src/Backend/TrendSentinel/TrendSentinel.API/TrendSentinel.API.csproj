@@ -7,7 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TrendSentinel.Application\TrendSentinel.Application.csproj" />
+    <ProjectReference Include="..\TrendSentinel.Domain\TrendSentinel.Domain.csproj" />
+    <ProjectReference Include="..\TrendSentinel.Infrastructure\TrendSentinel.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

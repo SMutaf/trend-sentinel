@@ -1,0 +1,59 @@
+# --- .NET Core & C# Ignored Files ---
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+*.launchSettings.json
+
+# Güvenlik (API Keyler buraya girilecek, repoya atılmamalı!)
+**/appsettings.Development.json
+**/appsettings.Local.json
+secrets.json
+
+# Nuget Packages
+[Pp]ackages/
+!src/**/[Pp]ackages/
+!tests/**/[Pp]ackages/
+
+# Test Results
+TestResults/
+*.trx
+
+# --- Python & AI Ignored Files ---
+# Byte-compiled / Optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments (Sanal Ortamlar)
+venv/
+.venv/
+env/
+.env
+*.env
+
+# Jupyter Notebook Checkpoints (Eğer kullanırsan)
+.ipynb_checkpoints
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- General System Files ---
+.DS_Store
+Thumbs.db

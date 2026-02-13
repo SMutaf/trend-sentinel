@@ -7,13 +7,13 @@ namespace TrendSentinel.Domain.Entities
     public class Company : BaseEntity
     {
         public string Name { get; set; } = string.Empty;
-        public string TickerSymbol { get; set; } = string.Empty; // Örn: NVDA, TSLA
+        public string TickerSymbol { get; set; } = string.Empty; 
         public SectorType Sector { get; set; }
 
         // Alert gönderildi mi? (Sürekli spam yapmamak için)
         public bool IsAlertSent { get; set; }
 
-        // Navigation Property (Bir şirketin birden çok haberi olur)
+
         public ICollection<NewsLog> NewsLogs { get; set; }
 
         public Company()

@@ -14,7 +14,6 @@ namespace TrendSentinel.Application.Services
 
         public TelegramService(IConfiguration configuration)
         {
-            // Ayarları güvenli bir şekilde okuyoruz
             var token = configuration["TelegramSettings:BotToken"];
             _chatId = configuration["TelegramSettings:ChatId"];
 
@@ -39,7 +38,7 @@ namespace TrendSentinel.Application.Services
             catch (Exception ex)
             {
                 // Telegram patlarsa ana program durmasın, sadece loglasın
-                Console.WriteLine($"⚠️ Telegram Hatası: {ex.Message}");
+                Console.WriteLine($"Telegram Hatası: {ex.Message}");
             }
         }
     }

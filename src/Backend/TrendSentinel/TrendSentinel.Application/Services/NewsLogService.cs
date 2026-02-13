@@ -24,20 +24,18 @@ namespace TrendSentinel.Application.Services
 
         public async Task<NewsLogResponse> CreateNewsLogAsync(CreateNewsLogRequest request)
         {
-            // 1. Veriyi Kaydet
             var newLog = _mapper.Map<NewsLog>(request);
             var createdLog = await _newsLogRepository.AddAsync(newLog);
 
-            // 2. V2 MANTIĞI: Eğer Trend Varsa TELEGRAM'A MESAJ AT! 🚀
+            // Trend KOntrolü eğer trend trigger olduysa bota mesaj at
             if (request.IsTrendTriggered)
             {
-                var alertMessage = $"🚨 *YAPAY ZEKA TREND ALARMI!*\n\n" +
-                                   $"💥 *Başlık:* {request.Title}\n" +
-                                   $"🧠 *Analiz:* _{request.TrendSummary}_\n" +
+                var alertMessage = $"*YAPAY ZEKA TREND ALARMI!*\n\n" +
+                                   $"*Başlık:* {request.Title}\n" +
+                                   $"*Analiz:* _{request.TrendSummary}_\n" +
                                    $"Sentiment: {request.SentimentLabel}\n" +
-                                   $"🔗 [Habere Git]({request.Url})";
+                                   $"[Habere Git]({request.Url})";
 
-                // Arka planda gönder (Await etmeyelim, hızı kesmesin)
                 _ = _telegramService.SendAlertAsync(alertMessage);
             }
 

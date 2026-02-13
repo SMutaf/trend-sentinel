@@ -1,0 +1,6 @@
+requests==2.31.0
+beautifulsoup4==4.12.3
+google-generativeai==0.8.4
+python-dotenv==1.0.1
+pydantic==2.6.1
+schedule==1.2.1

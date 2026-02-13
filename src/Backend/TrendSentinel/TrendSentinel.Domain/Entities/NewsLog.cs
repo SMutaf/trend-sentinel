@@ -14,12 +14,12 @@ namespace TrendSentinel.Domain.Entities
         public string Url { get; set; } = string.Empty;
         public string Summary { get; set; } = string.Empty;
 
-        // --- YAPAY ZEKA ANALİZ SONUÇLARI (V2) ---
+        // --- YAPAY ZEKA ANALİZ SONUÇLARI ---
 
-        // AI "Burada önemli bir trend var!" dedi mi? (True/False)
+        // AI önemli bir trend haberi buldu mu? (True/False)
         public bool IsTrendTriggered { get; set; }
 
-        // AI'ın yorumu: "Yatırımcı ilgisi artıyor çünkü..."
+        // Trend sebebi AI yorumu
         public string TrendSummary { get; set; } = string.Empty;
 
         // Duygu Durumu: Positive / Negative / Neutral

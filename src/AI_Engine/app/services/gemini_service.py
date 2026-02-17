@@ -4,54 +4,59 @@ from app.core.config import Config
 
 class GeminiService:
     def __init__(self):
-        # 1. API Anahtarını Yapılandır
         if not Config.GEMINI_API_KEY:
-            raise ValueError("Gemini API Key bulunamadı! .env dosyasını kontrol et.")
-            
+            raise ValueError("Gemini API Key eksik!")
         genai.configure(api_key=Config.GEMINI_API_KEY)
-        
-        # 2. LLM model seçimi
         self.model = genai.GenerativeModel('gemini-2.5-flash')
 
-    def analyze_news(self, news_title, news_summary):
+    def analyze_news_with_history(self, current_news_title, current_news_summary, history_logs):
         """
-        Haberi Gemini'ye gönderir ve JSON formatında analiz sonucunu döner.
+        Geçmiş haberleri de dikkate alarak analiz yapar.
+        history_logs: Veritabanından gelen eski haberlerin listesi.
         """
-        # Yapay Zekaya Gönderilecek Emir (Prompt)
+        
+        # Geçmiş haberleri metne dök
+        history_text = "ÖNCEKİ HABERLER (Eskiden yeniye):\n"
+        if history_logs:
+            for log in history_logs:
+                history_text += f"- {log.get('createdDate')}: {log.get('title')} (Analiz: {log.get('trendSummary')})\n"
+        else:
+            history_text += "Bu şirket için kayıtlı geçmiş haber yok.\n"
+
         prompt = f"""
-        Sen uzman bir borsa analistisin. Aşağıdaki finans haberini analiz et.
+        Sen uzman bir finansal stratejistsin. Bir şirketin haber akışını takip ediyorsun.
+        
+        {history_text}
+        
+        ---
+        YENİ GELEN HABER:
+        Başlık: {current_news_title}
+        Özet: {current_news_summary}
+        ---
 
-        Haber Başlığı: {news_title}
-        Haber Özeti: {news_summary}
+        GÖREVİN:
+        Yeni haberi, geçmiş haberlerle BİRLEŞTİREREK analiz et.
+        Örneğin: Geçmişte "FDA Başvurusu" varsa ve şimdi "FDA Onayı" geldiyse bu devasa bir trenddir.
+        
+        YANIT FORMATI (JSON):
+        1. 'shouldSave': Bu haber şirket için "önemli bir gelişme" veya "hazırlık" aşaması mı? (Çöp haberleri kaydetme).
+        2. 'isTrendTriggered': (TRUE/FALSE) Geçmiş ve şimdiki haber birleşince hissede BÜYÜK bir patlama yaratır mı?
+        3. 'trendSummary': Neden böyle düşündüğünü açıklayan Türkçe cümle.
+        4. 'sentimentLabel': Positive, Negative, Neutral.
 
-        Kurallar:
-        1. 'isTrendTriggered': Eğer bu haber hisse fiyatını ANLIK ve GÜÇLÜ etkileyecek bir trend başlatıyorsa 'true', yoksa 'false'.
-        2. 'trendSummary': Trendin nedenini açıklayan tek cümlelik Türkçe özet.
-        3. 'sentimentLabel': Haberin duygusu (Positive, Negative, Neutral).
-
-        Yanıtı SADECE aşağıdaki saf JSON formatında ver (Markdown veya ```json kullanma):
+        SADECE JSON DÖN:
         {{
+            "shouldSave": true,
             "isTrendTriggered": true,
-            "trendSummary": "Yatırımcılar için risk oluşturuyor...",
-            "sentimentLabel": "Negative"
+            "trendSummary": "Geçmişteki başvuru haberi, bugünkü onay ile tamamlandı ve güçlü alım sinyali oluştu.",
+            "sentimentLabel": "Positive"
         }}
         """
         
         try:
-            # AI'dan yanıt al
             response = self.model.generate_content(prompt)
-            
-            # Yanıtı temizle (Bazen ```json etiketiyle gelir, onu siliyoruz)
             cleaned_text = response.text.replace('```json', '').replace('```', '').strip()
-            
-            # String'i JSON objesine çevir
             return json.loads(cleaned_text)
-            
         except Exception as e:
-            print(f"🧠 AI Analiz Hatası: {e}")
-            # Hata olursa program patlamasın, nötr sonuç dönsün
-            return {
-                "isTrendTriggered": False, 
-                "trendSummary": "AI Analizi Yapılamadı", 
-                "sentimentLabel": "Neutral"
-            }
+            print(f"🧠 AI Context Hatası: {e}")
+            return {"shouldSave": True, "isTrendTriggered": False, "trendSummary": "Hata", "sentimentLabel": "Neutral"}

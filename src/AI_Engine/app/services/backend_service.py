@@ -2,7 +2,6 @@ import requests
 import urllib3
 from app.core.config import Config
 
-# Localhost'ta çalıştığı için SSL sertifika uyarılarını (HTTPS) gizliyoruz.
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class BackendService:
@@ -10,38 +9,46 @@ class BackendService:
         self.base_url = Config.BACKEND_URL
 
     def get_companies(self):
-        """
-        API'den takip edilecek şirketlerin listesini çeker.
-        """
         url = f"{self.base_url}/Companies"
         try:
-            # verify=False: Localhost sertifikasına güvenmesi için
             response = requests.get(url, verify=False, timeout=5)
-            
-            if response.status_code == 200:
+            return response.json() if response.status_code == 200 else []
+        except:
+            return []
+
+    def create_company(self, ticker, name):
+        """Şirket yoksa oluşturur"""
+        url = f"{self.base_url}/Companies"
+        payload = {"name": name, "tickerSymbol": ticker, "sector": 0}
+        try:
+            response = requests.post(url, json=payload, verify=False, timeout=5)
+            if response.status_code in [200, 201]:
                 return response.json()
-            else:
-                print(f"API Hatası (Şirketler alınamadı): {response.status_code}")
-                return []
+            return None
+        except:
+            return None
+
+    # --- YENİ: GEÇMİŞ HABERLERİ ÇEKME ---
+    def get_recent_logs(self, company_id, limit=5):
+        """
+        AI'ın hafızası olması için o şirkete ait son haberleri çeker.
+        """
+        url = f"{self.base_url}/NewsLogs/{company_id}" 
+        try:
+            response = requests.get(url, verify=False, timeout=5)
+            if response.status_code == 200:
+                logs = response.json()
+                # Tarihe göre sırala
+                return logs[:limit]
+            return []
         except Exception as e:
-            print(f"API Bağlantı Hatası: {e}")
+            print(f"Geçmiş loglar alınamadı: {e}")
             return []
 
     def send_log(self, log_data):
-        """
-        Analiz edilen haberi ve sonucu API'ye gönderir.
-        """
         url = f"{self.base_url}/NewsLogs"
         try:
-            # verify=False: Localhost sertifikasına güvenmesi için
             response = requests.post(url, json=log_data, verify=False, timeout=5)
-            
-            if response.status_code in [200, 201]:
-                print("Başarılı: Analiz Backend'e ve Veritabanına kaydedildi!")
-                return True
-            else:
-                print(f"Kayıt Başarısız: {response.status_code} - {response.text}")
-                return False
-        except Exception as e:
-            print(f"API Gönderim Hatası: {e}")
+            return response.status_code in [200, 201]
+        except:
             return False

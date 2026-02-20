@@ -31,53 +31,82 @@ def job():
             history_logs = backend.get_recent_logs(company_id)
             print(f"Hafıza: {len(history_logs)} geçmiş haber bulundu.")
             
-            # --- 1. YENİ EKLENEN: MÜKERRER KONTROLÜ (KOTAYI KURTARIR!) ---
+            # --- MÜKERRER KONTROLÜ ---
             is_duplicate = any(log.get('url') == news['link'] for log in history_logs)
             if is_duplicate:
-                print(f" ⏭️ Bu haberi daha önce işlemişiz, pas geçiliyor.")
-                continue # Döngüyü atla, Gemini'ye hiç sorma!
+                print(f"Bu haberi daha önce işlemişiz, pas geçiliyor.")
+                continue # Döngüyü atla, Gemini'ye sorma
             # -------------------------------------------------------------
         
         # --- ADIM B: AI KARAR MEKANİZMASI ---
-        analysis = ai_brain.analyze_news_with_history(news['title'], news['summary'], history_logs)
+        # 1. Haberin yayın saatini alıyoruz
+        news_pub_date = news.get('pubDate', 'Bilinmiyor')
+        
+        # 2. (saat bilgisi dahil) AI'ı çağırıyoruz
+        analysis = ai_brain.analyze_news_with_history(news['title'], news['summary'], news_pub_date, history_logs)
         
         should_save = analysis.get('shouldSave', False)
-        is_trend = analysis.get('isTrendTriggered', False)
         
+        # --- MATEMATİKSEL TREND VE QUANT VERİLERİ ---
+        impact = analysis.get('impactStrength', 1)
+        confidence = analysis.get('confidenceScore', 0)
+        
+        # Formülümüz: Etkisi 4 veya 5 olacak VE yapay zeka en az %75 emin olacak
+        is_trend = (impact >= 4) and (confidence >= 75)
+        
+        # Sentiment yönünü AI'ın 'expectedDirection' tahmininden belirliyoruz
+        direction = analysis.get('expectedDirection', 'Uncertain')
+        if direction == "Up":
+            sentiment = "Positive"
+        elif direction == "Down":
+            sentiment = "Negative"
+        else:
+            sentiment = "Neutral"
+
         if should_save or is_trend:
-            print(f"    Önemli Gelişme Tespit Edildi! (Trend: {is_trend})")
+            print(f"    Önemli Gelişme Tespit Edildi! (Trend: {is_trend}, Etki: {impact}/5, Güven: %{confidence})")
             
             if not company_id:
-                print(f"   ➕ Yeni Takip Başlatılıyor: {ticker}")
-                new_company = backend.create_company(ticker, ticker)
+                detected_sector = analysis.get('sectorId', 0)
+                print(f"Yeni Takip Başlatılıyor: {ticker} (Sektör: {detected_sector})")
+                # sektörü de C#'a gönderiyoruz
+                new_company = backend.create_company(ticker, ticker, detected_sector)
                 if new_company:
                     company_id = new_company['id']
                     existing_tickers[ticker] = company_id
             
             if company_id:
+                # C#'ın beklediği YENİ standart payload
                 payload = {
                     "companyId": company_id,
                     "title": news['title'],
                     "url": news['link'],
                     "summary": news['summary'][:500],
                     "isTrendTriggered": is_trend,
-                    "trendSummary": analysis.get('trendSummary', ''),
-                    "sentimentLabel": analysis.get('sentimentLabel', 'Neutral'),
-                    "publishedDate": datetime.now().isoformat()
+                    "trendSummary": analysis.get('trendSummary', '')[:500],
+                    "sentimentLabel": sentiment,
+                    "publishedDate": datetime.now().isoformat(),
+                    
+                    # --- YENİ EKLENEN QUANT ALANLARI ---
+                    "eventType": analysis.get('eventType', 'Generic News'),
+                    "impactStrength": impact,
+                    "expectedDirection": direction,
+                    "timeHorizon": analysis.get('timeHorizon', 'ShortTerm'),
+                    "overextendedRisk": analysis.get('overextendedRisk', False),
+                    "confidenceScore": confidence
                 }
                 backend.send_log(payload)
-                print(f"   ✅ Veritabanına işlendi.")
+                print(f"    Veritabanına işlendi.")
         else:
             print("     Önemsiz haber, pas geçildi.")
             
-        # --- 2. DEĞİŞEN: BEKLEME SÜRESİNİ UZAT ---
-        # "Dakikada Maksimum" hatasına takılmamak için 2 saniye yerine 10 saniye yapıyoruz.
+        # "Dakikada Maksimum" hatasına takılmamak için bekleme
         time.sleep(10) 
 
     print(f"Tur tamamlandı. {Config.CHECK_INTERVAL_MINUTES} dakika bekleniyor...")
 
 def start():
-    print("""--- TREND SENTINEL V3: CONTEXT AWARE MODE ---""")
+    print("""--- TREND SENTINEL V4: QUANT ANALYST MODE ---""")
     job()
     schedule.every(Config.CHECK_INTERVAL_MINUTES).minutes.do(job)
     while True:

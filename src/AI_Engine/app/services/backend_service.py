@@ -21,9 +21,9 @@ class BackendService:
             print(f"C# API'ye Ulaşılamıyor (Visual Studio Kapalı Olabilir!): {e}")
             return []
 
-    def create_company(self, ticker, name):
+    def create_company(self, ticker, name, sector_id=0):
         url = f"{self.base_url}/Companies"
-        payload = {"name": name, "tickerSymbol": ticker, "sector": 0}
+        payload = {"name": name, "tickerSymbol": ticker, "sector": sector_id}
         try:
             response = requests.post(url, json=payload, verify=False, timeout=5)
             if response.status_code in [200, 201]:

@@ -9,12 +9,20 @@ namespace TrendSentinel.Application.DTOs
         public string Url { get; set; } = string.Empty;
         public string Summary { get; set; } = string.Empty;
 
-        // V2: AI Trend Analiz Sonuçları
+        //AI Trend Analiz Sonuçları
         public bool IsTrendTriggered { get; set; }
         public string TrendSummary { get; set; } = string.Empty;
         public string SentimentLabel { get; set; } = string.Empty;
 
         public DateTime PublishedDate { get; set; }
+
+        // YENİ EKLENEN QUANT (ALGORİTMİK) ALANLAR
+        public string EventType { get; set; } = string.Empty;
+        public int ImpactStrength { get; set; }
+        public string ExpectedDirection { get; set; } = string.Empty;
+        public string TimeHorizon { get; set; } = string.Empty;
+        public bool OverextendedRisk { get; set; }
+        public int ConfidenceScore { get; set; }
     }
 
     public class NewsLogResponse
@@ -31,5 +39,13 @@ namespace TrendSentinel.Application.DTOs
 
         public DateTime PublishedDate { get; set; }
         public DateTime CreatedDate { get; set; }
+
+        // YENİ EKLENEN QUANT (ALGORİTMİK) ALANLAR
+        public string EventType { get; set; } = string.Empty;
+        public int ImpactStrength { get; set; }
+        public string ExpectedDirection { get; set; } = string.Empty;
+        public string TimeHorizon { get; set; } = string.Empty;
+        public bool OverextendedRisk { get; set; }
+        public int ConfidenceScore { get; set; }
     }
 }

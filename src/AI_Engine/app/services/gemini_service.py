@@ -9,47 +9,50 @@ class GeminiService:
         genai.configure(api_key=Config.GEMINI_API_KEY)
         self.model = genai.GenerativeModel('gemma-3-27b-it')
 
-    def analyze_news_with_history(self, current_news_title, current_news_summary, history_logs):
+    def analyze_news_with_history(self, current_news_title, current_news_summary, current_news_pub_date, history_logs):
         """
         Geçmiş haberleri de dikkate alarak analiz yapar.
         history_logs: Veritabanından gelen eski haberlerin listesi.
         """
         
-        # Geçmiş haberleri metne dök
         history_text = "ÖNCEKİ HABERLER (Eskiden yeniye):\n"
         if history_logs:
             for log in history_logs:
-                history_text += f"- {log.get('createdDate')}: {log.get('title')} (Analiz: {log.get('trendSummary')})\n"
+                history_text += f"- {log.get('createdDate')}: {log.get('title')} (Analiz: {log.get('trendSummary', '')})\n"
         else:
             history_text += "Bu şirket için kayıtlı geçmiş haber yok.\n"
 
         prompt = f"""
-        Sen uzman bir finansal stratejistsin. Bir şirketin haber akışını takip ediyorsun.
-        
+        Sen Wall Street'in en acımasız ve şüpheci algoritmik trade (quant) analistisin.
+
         {history_text}
-        
+
         ---
         YENİ GELEN HABER:
+        Yayınlanma Zamanı: {current_news_pub_date}
         Başlık: {current_news_title}
         Özet: {current_news_summary}
         ---
 
-        GÖREVİN:
-        Yeni haberi, geçmiş haberlerle BİRLEŞTİREREK analiz et.
-        Örneğin: Geçmişte "FDA Başvurusu" varsa ve şimdi "FDA Onayı" geldiyse bu devasa bir trenddir.
-        
-        YANIT FORMATI (JSON):
-        1. 'shouldSave': Bu haber şirket için "önemli bir gelişme" veya "hazırlık" aşaması mı? (Çöp haberleri kaydetme).
-        2. 'isTrendTriggered': (TRUE/FALSE) Geçmiş ve şimdiki haber birleşince hissede BÜYÜK bir patlama yaratır mı?
-        3. 'trendSummary': Neden böyle düşündüğünü açıklayan Türkçe cümle.
-        4. 'sentimentLabel': Positive, Negative, Neutral.
+        GÖREVİN: Haberi fiyat hareketi perspektifinden acımasızca değerlendir.
 
-        SADECE JSON DÖN:
+        DEĞERLENDİRME KRİTERLERİ:
+        1. Bu haber gerçek bir fiyat katalizörü mü?
+        2. Etki kısa vadeli mi uzun vadeli mi?
+        3. Haber zaten fiyatlanmış olabilir mi?
+        4. Bu haber "momentum continuation" mı yoksa "mean reversion risk" mi?
+
+        YANIT FORMATI (Aşağıdaki anahtarlara sahip SADECE geçerli bir JSON dön):
         {{
             "shouldSave": true,
-            "isTrendTriggered": true,
-            "trendSummary": "Geçmişteki başvuru haberi, bugünkü onay ile tamamlandı ve güçlü alım sinyali oluştu.",
-            "sentimentLabel": "Positive"
+            "eventType": "Earnings / FDA Approval / Upgrade / Hype / Generic News vb.",
+            "impactStrength": 4,
+            "expectedDirection": "Up",
+            "timeHorizon": "ShortTerm",
+            "overextendedRisk": false,
+            "confidenceScore": 85,
+            "sectorId": 2,
+            "trendSummary": "Haberin fiyat etkisini açıklayan net ve kısa yorum."
         }}
         """
         
@@ -59,4 +62,15 @@ class GeminiService:
             return json.loads(cleaned_text)
         except Exception as e:
             print(f"AI Context Hatası: {e}")
-            return {"shouldSave": True, "isTrendTriggered": False, "trendSummary": "Hata", "sentimentLabel": "Neutral"}
+            # C#'ı çökertmemek için güvenli varsayılan değerler dönüyoruz
+            return {
+                "shouldSave": False, 
+                "eventType": "Error", 
+                "impactStrength": 1, 
+                "expectedDirection": "Uncertain", 
+                "timeHorizon": "Intraday", 
+                "overextendedRisk": False, 
+                "confidenceScore": 0, 
+                "sectorId": 0, 
+                "trendSummary": "API Hatası"
+            }

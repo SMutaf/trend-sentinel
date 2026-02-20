@@ -7,7 +7,7 @@ class GeminiService:
         if not Config.GEMINI_API_KEY:
             raise ValueError("Gemini API Key eksik!")
         genai.configure(api_key=Config.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.model = genai.GenerativeModel('gemma-3-27b-it')
 
     def analyze_news_with_history(self, current_news_title, current_news_summary, history_logs):
         """
@@ -58,5 +58,5 @@ class GeminiService:
             cleaned_text = response.text.replace('```json', '').replace('```', '').strip()
             return json.loads(cleaned_text)
         except Exception as e:
-            print(f"🧠 AI Context Hatası: {e}")
+            print(f"AI Context Hatası: {e}")
             return {"shouldSave": True, "isTrendTriggered": False, "trendSummary": "Hata", "sentimentLabel": "Neutral"}

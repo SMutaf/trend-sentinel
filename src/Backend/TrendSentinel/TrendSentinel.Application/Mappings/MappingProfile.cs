@@ -17,6 +17,11 @@ namespace TrendSentinel.Application.Mappings
             CreateMap<NewsLog, NewsLogResponse>();
             CreateMap<CreateNewsLogRequest, NewsLog>()
                 .ForMember(dest => dest.PublishedDate, opt => opt.MapFrom(src => src.PublishedDate.ToUniversalTime()));
+
+            // PriceHistory Eşleştirmesi
+            CreateMap<PriceHistory, PriceHistoryResponse>();
+            CreateMap<CreatePriceHistoryRequest, PriceHistory>()
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date.ToUniversalTime()));
         }
     }
 }

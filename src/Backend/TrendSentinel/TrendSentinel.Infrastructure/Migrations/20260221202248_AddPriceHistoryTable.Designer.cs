@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TrendSentinel.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using TrendSentinel.Infrastructure.Persistence;
 namespace TrendSentinel.Infrastructure.Migrations
 {
     [DbContext(typeof(TrendSentinelDbContext))]
-    partial class TrendSentinelDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260221202248_AddPriceHistoryTable")]
+    partial class AddPriceHistoryTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

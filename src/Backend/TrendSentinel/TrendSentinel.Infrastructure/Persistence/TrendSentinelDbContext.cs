@@ -13,6 +13,8 @@ namespace TrendSentinel.Infrastructure.Persistence
         public DbSet<Company> Companies { get; set; }
         public DbSet<NewsLog> NewsLogs { get; set; }
 
+        public DbSet<PriceHistory> PriceHistories { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // --- Company Ayarları ---

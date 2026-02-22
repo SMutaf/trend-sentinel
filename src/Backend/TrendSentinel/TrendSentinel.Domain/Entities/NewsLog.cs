@@ -47,5 +47,13 @@ namespace TrendSentinel.Domain.Entities
 
         // Yapay Zekanın Kararına Güven Skoru (0 - 100 arası)
         public int ConfidenceScore { get; set; }
+
+        // --- YENİ EKLENEN İLİŞKİLER (1:1) ---
+
+        // Haberin geldiği anın fiyat fotoğrafı
+        public PriceHistory? PriceSnapshot { get; set; }
+
+        // Haberin geldiği anın teknik indikatör fotoğrafı
+        public EventTechnicalSnapshot? TechnicalSnapshot { get; set; }
     }
 }

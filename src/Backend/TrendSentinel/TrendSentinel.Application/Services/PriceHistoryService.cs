@@ -23,15 +23,14 @@ namespace TrendSentinel.Application.Services
         public async Task<PriceHistoryResponse> AddSnapshotAsync(CreatePriceHistoryRequest request)
         {
             var priceHistory = _mapper.Map<PriceHistory>(request);
-
             var addedEntity = await _repository.AddAsync(priceHistory);
 
             return _mapper.Map<PriceHistoryResponse>(addedEntity);
         }
 
-        public async Task<IReadOnlyList<PriceHistoryResponse>> GetHistoryByCompanyIdAsync(Guid companyId)
+        public async Task<IReadOnlyList<PriceHistoryResponse>> GetSnapshotByNewsLogIdAsync(Guid newsLogId)
         {
-            var histories = await _repository.GetAsync(p => p.CompanyId == companyId);
+            var histories = await _repository.GetAsync(p => p.NewsLogId == newsLogId);
 
             return _mapper.Map<IReadOnlyList<PriceHistoryResponse>>(histories);
         }

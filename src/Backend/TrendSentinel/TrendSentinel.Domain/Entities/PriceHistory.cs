@@ -6,8 +6,8 @@ namespace TrendSentinel.Domain.Entities
     public class PriceHistory : BaseEntity
     {
         // Hangi şirketin fiyatı?
-        public Guid CompanyId { get; set; }
-        public Company Company { get; set; } = null!;
+        public Guid NewsLogId { get; set; }
+        public NewsLog NewsLog { get; set; } = null!;
 
         // Olay Anı / Mumun Tarihi
         public DateTime Date { get; set; }

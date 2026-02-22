@@ -27,10 +27,10 @@ namespace TrendSentinel.API.Controllers
             return Ok(response);
         }
 
-        [HttpGet("{companyId}")]
-        public async Task<IActionResult> GetByCompanyId(Guid companyId)
+        [HttpGet("newslog/{newsLogId}")]
+        public async Task<IActionResult> GetByNewsLogId(Guid newsLogId)
         {
-            var histories = await _priceHistoryService.GetHistoryByCompanyIdAsync(companyId);
+            var histories = await _priceHistoryService.GetSnapshotByNewsLogIdAsync(newsLogId);
             return Ok(histories);
         }
     }

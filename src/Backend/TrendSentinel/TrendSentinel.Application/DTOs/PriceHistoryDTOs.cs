@@ -4,7 +4,7 @@ namespace TrendSentinel.Application.DTOs
 {
     public class CreatePriceHistoryRequest
     {
-        public Guid CompanyId { get; set; }
+        public Guid NewsLogId { get; set; }
         public DateTime Date { get; set; }
 
         public decimal Open { get; set; }
@@ -17,7 +17,7 @@ namespace TrendSentinel.Application.DTOs
     public class PriceHistoryResponse
     {
         public Guid Id { get; set; }
-        public Guid CompanyId { get; set; }
+        public Guid NewsLogId { get; set; }
         public DateTime Date { get; set; }
 
         public decimal Open { get; set; }

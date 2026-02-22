@@ -12,8 +12,8 @@ namespace TrendSentinel.Infrastructure.Persistence
         // Tablolarımız
         public DbSet<Company> Companies { get; set; }
         public DbSet<NewsLog> NewsLogs { get; set; }
-
         public DbSet<PriceHistory> PriceHistories { get; set; }
+        public DbSet<EventTechnicalSnapshot> EventTechnicalSnapshots { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,6 +38,20 @@ namespace TrendSentinel.Infrastructure.Persistence
                 .WithOne(n => n.Company)
                 .HasForeignKey(n => n.CompanyId)
                 .OnDelete(DeleteBehavior.Cascade); // Şirket silinirse haberleri de silinsin.
+
+            // 1. NewsLog (Haber) - PriceHistory (Olay Anı Fiyatı) İlişkisi
+            modelBuilder.Entity<NewsLog>()
+                .HasOne(n => n.PriceSnapshot)
+                .WithOne(p => p.NewsLog)
+                .HasForeignKey<PriceHistory>(p => p.NewsLogId)
+                .OnDelete(DeleteBehavior.Cascade); // Haber silinirse, fiyat fotoğrafı da silinsin.
+
+            // 2. NewsLog (Haber) - EventTechnicalSnapshot (Olay Anı İndikatörleri) İlişkisi
+            modelBuilder.Entity<NewsLog>()
+                .HasOne(n => n.TechnicalSnapshot)
+                .WithOne(t => t.NewsLog)
+                .HasForeignKey<EventTechnicalSnapshot>(t => t.NewsLogId)
+                .OnDelete(DeleteBehavior.Cascade); // Haber silinirse, teknik analiz verisi de silinsin.
 
             base.OnModelCreating(modelBuilder);
         }

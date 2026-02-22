@@ -2,7 +2,7 @@ import google.generativeai as genai
 import json
 from app.core.config import Config
 
-class GeminiService:
+class LLMEngine:
     def __init__(self):
         if not Config.GEMINI_API_KEY:
             raise ValueError("Gemini API Key eksik!")

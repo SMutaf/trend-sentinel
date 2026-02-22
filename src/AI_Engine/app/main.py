@@ -3,12 +3,13 @@ import schedule
 from datetime import datetime
 from app.core.config import Config
 from app.scrapers.yahoo_scraper import YahooFinanceScraper
-from app.services.gemini_service import GeminiService
+from app.engines.llm_engine import LLMEngine 
 from app.services.backend_service import BackendService
 
 scraper = YahooFinanceScraper()
-ai_brain = GeminiService()
+llm_brain = LLMEngine()  
 backend = BackendService()
+
 
 def job():
     print(f"\n--- ZİNCİRLEME ANALİZ MODU: {datetime.now().strftime('%H:%M:%S')} ---")
@@ -19,7 +20,8 @@ def job():
     
     for ticker in target_tickers:
         news_list = scraper.fetch_latest_news(ticker, limit=1)
-        if not news_list: continue
+        if not news_list:
+            continue
         
         news = news_list[0]
         print(f"{ticker} İnceleniyor: '{news['title'][:30]}...'")
@@ -35,15 +37,16 @@ def job():
             is_duplicate = any(log.get('url') == news['link'] for log in history_logs)
             if is_duplicate:
                 print(f"Bu haberi daha önce işlemişiz, pas geçiliyor.")
-                continue # Döngüyü atla, Gemini'ye sorma
-            # -------------------------------------------------------------
+                continue
         
-        # --- ADIM B: AI KARAR MEKANİZMASI ---
-        # 1. Haberin yayın saatini alıyoruz
         news_pub_date = news.get('pubDate', 'Bilinmiyor')
         
-        # 2. (saat bilgisi dahil) AI'ı çağırıyoruz
-        analysis = ai_brain.analyze_news_with_history(news['title'], news['summary'], news_pub_date, history_logs)
+        analysis = llm_brain.analyze_news_with_history(
+            news['title'],
+            news['summary'],
+            news_pub_date,
+            history_logs
+        )
         
         should_save = analysis.get('shouldSave', False)
         
@@ -69,14 +72,13 @@ def job():
             if not company_id:
                 detected_sector = analysis.get('sectorId', 0)
                 print(f"Yeni Takip Başlatılıyor: {ticker} (Sektör: {detected_sector})")
-                # sektörü de C#'a gönderiyoruz
+                 # sektörü de C#'a gönderiyoruz
                 new_company = backend.create_company(ticker, ticker, detected_sector)
                 if new_company:
                     company_id = new_company['id']
                     existing_tickers[ticker] = company_id
             
             if company_id:
-                # C#'ın beklediği YENİ standart payload
                 payload = {
                     "companyId": company_id,
                     "title": news['title'],
@@ -86,8 +88,6 @@ def job():
                     "trendSummary": analysis.get('trendSummary', '')[:500],
                     "sentimentLabel": sentiment,
                     "publishedDate": datetime.now().isoformat(),
-                    
-                    # --- YENİ EKLENEN QUANT ALANLARI ---
                     "eventType": analysis.get('eventType', 'Generic News'),
                     "impactStrength": impact,
                     "expectedDirection": direction,
@@ -100,10 +100,11 @@ def job():
         else:
             print("     Önemsiz haber, pas geçildi.")
             
-        # "Dakikada Maksimum" hatasına takılmamak için bekleme
-        time.sleep(10) 
+         # "Dakikada Maksimum" hatasına takılmamak için bekleme
+        time.sleep(10)
 
     print(f"Tur tamamlandı. {Config.CHECK_INTERVAL_MINUTES} dakika bekleniyor...")
+
 
 def start():
     print("""--- TREND SENTINEL V4: QUANT ANALYST MODE ---""")
@@ -112,6 +113,7 @@ def start():
     while True:
         schedule.run_pending()
         time.sleep(1)
+
 
 if __name__ == "__main__":
     start()

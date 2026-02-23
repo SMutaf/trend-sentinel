@@ -9,7 +9,7 @@ class Config:
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     
     # Backend adresini al, yoksa varsayılanı kullan
-    BACKEND_URL = os.getenv("BACKEND_URL", "https://localhost:7001/api")
+    BACKEND_URL = os.getenv("BACKEND_URL", "https://localhost:7204/api")
     
     # Dakika ayarını al (Sayıya çevir)
     CHECK_INTERVAL_MINUTES = int(os.getenv("CHECK_INTERVAL_MINUTES", 15))

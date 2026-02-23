@@ -1,59 +1,81 @@
 import requests
-import urllib3
 from app.core.config import Config
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class BackendService:
     def __init__(self):
         self.base_url = Config.BACKEND_URL
 
     def get_companies(self):
-        url = f"{self.base_url}/Companies"
+        url = f"{self.base_url}/api/Companies" if not self.base_url.endswith("/api") else f"{self.base_url}/Companies"
         try:
-            response = requests.get(url, verify=False, timeout=5)
-            if response.status_code == 200:
-                return response.json()
-            else:
-                print(f"C# API Okuma Hatası (Kod: {response.status_code})")
-                return []
-        except Exception as e:
-            print(f"C# API'ye Ulaşılamıyor (Visual Studio Kapalı Olabilir!): {e}")
+            response = requests.get(url, timeout=10, verify=False)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Şirket Listesi Çekme Hatası: {e}")
             return []
 
-    def create_company(self, ticker, name, sector_id=0):
-        url = f"{self.base_url}/Companies"
-        payload = {"name": name, "tickerSymbol": ticker, "sector": sector_id}
+    def create_company(self, name, ticker, sector_id=0):
+        url = f"{self.base_url}/api/Companies" if not self.base_url.endswith("/api") else f"{self.base_url}/Companies"
+        payload = {"name": name, "tickerSymbol": ticker, "sectorId": sector_id}
         try:
-            response = requests.post(url, json=payload, verify=False, timeout=5)
-            if response.status_code in [200, 201]:
-                return response.json()
-            else:
-                print(f"Şirket C#'a Kaydedilemedi (Kod: {response.status_code}) - {response.text}")
-                return None
-        except Exception as e:
-            print(f"Şirket Kayıt Hatası (Visual Studio Kapalı Olabilir!): {e}")
+            response = requests.post(url, json=payload, timeout=10, verify=False)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Şirket Kayıt Hatası: {e}")
             return None
 
-    def get_recent_logs(self, company_id, limit=5):
-        url = f"{self.base_url}/NewsLogs/{company_id}" 
+    def get_recent_logs(self, company_id):
+        url = f"{self.base_url}/api/NewsLogs/company/{company_id}" if not self.base_url.endswith("/api") else f"{self.base_url}/NewsLogs/company/{company_id}"
         try:
-            response = requests.get(url, verify=False, timeout=5)
-            if response.status_code == 200:
-                logs = response.json()
-                return logs[:limit]
-            return []
-        except Exception as e:
-            print(f"Geçmiş loglar alınamadı: {e}")
+            response = requests.get(url, timeout=10, verify=False)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Geçmiş Logları Çekme Hatası: {e}")
             return []
 
-    def send_log(self, log_data):
-        url = f"{self.base_url}/NewsLogs"
+    def send_log(self, payload):
+        """ Haberi kaydeder ve C# API'den dönen NewsLog nesnesini (ve ID'sini) geri döndürür. """
+        url = f"{self.base_url}/api/NewsLogs" if not self.base_url.endswith("/api") else f"{self.base_url}/NewsLogs"
         try:
-            response = requests.post(url, json=log_data, verify=False, timeout=5)
-            if response.status_code not in [200, 201]:
-                 print(f"Haber Kaydedilemedi (Kod: {response.status_code})")
-            return response.status_code in [200, 201]
-        except Exception as e:
+            response = requests.post(url, json=payload, timeout=10, verify=False)
+            response.raise_for_status()
+            # DİKKAT: C#'tan dönen yanıtı (JSON) geri döndürüyoruz ki içinden NewsLogId'yi alabilelim!
+            return response.json() 
+        except requests.exceptions.RequestException as e:
             print(f"Haber Kayıt Hatası: {e}")
-            return False
+            if e.response is not None:
+                print(f"API Detayı: {e.response.text}")
+            return None
+
+    def send_price_history(self, payload):
+        """ Sadece SAF FİYAT verilerini (Open, High, Low, Close, Volume) NewsLogId ile kaydeder. """
+        endpoint = "/PriceHistories" if self.base_url.endswith("/api") else "/api/PriceHistories"
+        url = f"{self.base_url}{endpoint}"
+        
+        try:
+            response = requests.post(url, json=payload, timeout=10, verify=False)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"PriceHistory Kayıt Hatası: {e}")
+            if e.response is not None:
+                print(f"API Detayı: {e.response.text}")
+            return None
+
+    def send_technical_snapshot(self, payload):
+        """ Sadece TEKNİK İNDİKATÖR verilerini (RSI, MACD, vs.) NewsLogId ile kaydeder. """
+        endpoint = "/EventTechnicalSnapshots" if self.base_url.endswith("/api") else "/api/EventTechnicalSnapshots"
+        url = f"{self.base_url}{endpoint}"
+        
+        try:
+            response = requests.post(url, json=payload, timeout=10, verify=False)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Technical Snapshot Kayıt Hatası: {e}")
+            if e.response is not None:
+                print(f"API Detayı: {e.response.text}")
+            return None

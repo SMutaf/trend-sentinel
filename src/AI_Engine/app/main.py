@@ -133,7 +133,10 @@ def job():
                             "rsiValue": tech_data['rsi'],
                             "macdState": tech_data['macd_state'],
                             "techScore": tech_data['tech_score'],
-                            "isOverextended": tech_data['is_overextended']
+                            "isOverextended": tech_data['is_overextended'],
+                            "volRatio": tech_data['vol_ratio'],
+                            "volTrend": tech_data['vol_trend'],
+                            "aboveAvgDaysLast5": tech_data['above_avg_days']
                         }
                         backend.send_technical_snapshot(technical_payload)
                         

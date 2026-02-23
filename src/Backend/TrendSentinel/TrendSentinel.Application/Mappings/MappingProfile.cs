@@ -22,6 +22,9 @@ namespace TrendSentinel.Application.Mappings
             CreateMap<PriceHistory, PriceHistoryResponse>();
             CreateMap<CreatePriceHistoryRequest, PriceHistory>()
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date.ToUniversalTime()));
+
+            CreateMap<CreateEventTechnicalSnapshotRequest, EventTechnicalSnapshot>();
+            CreateMap<EventTechnicalSnapshot, EventTechnicalSnapshotResponse>();
         }
     }
 }

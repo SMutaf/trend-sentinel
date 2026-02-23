@@ -61,6 +61,9 @@ namespace TrendSentinel.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("AboveAvgDaysLast5")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -82,6 +85,13 @@ namespace TrendSentinel.Infrastructure.Migrations
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("VolRatio")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("VolTrend")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

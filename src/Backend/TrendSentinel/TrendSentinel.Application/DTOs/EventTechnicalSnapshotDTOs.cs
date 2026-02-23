@@ -10,6 +10,9 @@ namespace TrendSentinel.Application.DTOs
         public string MacdState { get; set; } = string.Empty;
         public int TechScore { get; set; }
         public bool IsOverextended { get; set; }
+        public double VolRatio { get; set; }
+        public string VolTrend { get; set; }
+        public int AboveAvgDaysLast5 { get; set; }
     }
 
     public class EventTechnicalSnapshotResponse
@@ -21,5 +24,9 @@ namespace TrendSentinel.Application.DTOs
         public string MacdState { get; set; } = string.Empty;
         public int TechScore { get; set; }
         public bool IsOverextended { get; set; }
+        public double VolRatio { get; set; }
+        public string VolTrend { get; set; }
+        public int AboveAvgDaysLast5 { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
 }

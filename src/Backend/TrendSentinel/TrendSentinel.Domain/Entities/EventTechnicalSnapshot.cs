@@ -13,6 +13,11 @@ namespace TrendSentinel.Domain.Entities
         public decimal RsiValue { get; set; }
         public string MacdState { get; set; } = string.Empty;
         public int TechScore { get; set; }
-        public bool IsOverextended { get; set; }
+        public bool IsOverextended { get; set; }    
+
+        //Volume teknik verileri
+        public decimal VolRatio { get; set; }        // 20 günlük ortalamaya oranı (Örn: 1.5 katı)
+        public string VolTrend { get; set; } = string.Empty; // "Strong", "Weak", "Moderate"
+        public int AboveAvgDaysLast5 { get; set; }   // Son 5 günde kaç kere ortalamayı geçti?
     }
 }

@@ -71,6 +71,9 @@ namespace TrendSentinel.Infrastructure.Migrations
                     MacdState = table.Column<string>(type: "text", nullable: false),
                     TechScore = table.Column<int>(type: "integer", nullable: false),
                     IsOverextended = table.Column<bool>(type: "boolean", nullable: false),
+                    VolRatio = table.Column<decimal>(type: "numeric", nullable: false),
+                    VolTrend = table.Column<string>(type: "text", nullable: false),
+                    AboveAvgDaysLast5 = table.Column<int>(type: "integer", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },

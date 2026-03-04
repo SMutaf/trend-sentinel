@@ -52,5 +52,5 @@ namespace TrendSentinel.Application.Mappings
                 .ForMember(dest => dest.Change, opt => opt.MapFrom(src => src.CumulativeChangePercent));
         }
     }
-    }
+    
 }

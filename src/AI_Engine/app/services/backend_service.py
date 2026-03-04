@@ -27,12 +27,17 @@ class BackendService:
             return None
 
     def get_recent_logs(self, company_id):
-        url = f"{self.base_url}/api/NewsLogs/company/{company_id}" if not self.base_url.endswith("/api") else f"{self.base_url}/NewsLogs/company/{company_id}"
+        url = f"{self.base_url}/api/NewsLogs/{company_id}" if not self.base_url.endswith("/api") else f"{self.base_url}/NewsLogs/{company_id}"
+        
         try:
             response = requests.get(url, timeout=10, verify=False)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
+            # 404 hatası "normal" bir durumdur (yeni şirket), logu kirletmeyelim.
+            if e.response is not None and e.response.status_code == 404:
+                return []
+            
             print(f"Geçmiş Logları Çekme Hatası: {e}")
             return []
 

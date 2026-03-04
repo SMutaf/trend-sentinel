@@ -71,11 +71,40 @@ def job():
         # Snapshot (Fiyat fotoğrafı) ve İndikatörleri (RSI, MACD) hesapla
         tech_data = tech_engine.evaluate_technicals(ticker, direction)
         
-        # Yeni Kantitatif Formül: AI Güveni + Teknik Onay (RSI ucuz mu/şişmiş mi?)
-        is_trend = (impact >= 4) and (confidence >= 75)
+        tech_score = tech_data.get('tech_score', 0)
+        vol_trend = tech_data.get('vol_trend', 'Weak')
+        vol_ratio = tech_data.get('vol_ratio', 0.0)
+
+        # STRATEJİ 1: BREAKOUT (Haber Patlaması)
+        # Çok güçlü haber + Hacim patlaması + Yüksek güven
+        is_breakout = (
+            impact >= 4 and
+            confidence >= 75 and
+            vol_ratio >= 1.5 and
+            vol_trend == "Strong"
+        )
+
+        # STRATEJİ 2: SLOW TREND (İstikrarlı Yükseliş)
+        # İyi haber + Teknik Puan (RSI/MACD) iyi + Hacim destekliyor
+        is_slow_trend = (
+            impact >= 3 and
+            confidence >= 70 and
+            tech_score >= 2 and
+            vol_trend in ["Strong", "Moderate"]
+        )
+
+        # Ana Trend Kararı
+        is_trend = is_breakout or is_slow_trend
+
+        trend_reason = ""
+        if is_breakout: trend_reason = "BREAKOUT (Hacim Patlaması)"
+        elif is_slow_trend: trend_reason = "SLOW TREND (Teknik+Hacim)"
         
         if should_save or is_trend:
-            print(f"    Önemli Gelişme Tespit Edildi! (Trend: {is_trend}, LLM Etki: {impact}/5, Tech Puanı: {tech_data['tech_score']})")
+            print(f"     Önemli Gelişme! (Trend: {is_trend})")
+            print(f"       Detay: LLM:{impact}/5, Güven:%{confidence}, Tech:{tech_score}, Hacim:{vol_trend} (x{vol_ratio})")
+            if is_trend:
+                print(f"       Strateji: {trend_reason}")
             
             # Şirket yoksa önce şirketi C#'a kaydet
             if not company_id:

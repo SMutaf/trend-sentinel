@@ -27,8 +27,6 @@ builder.Services.AddScoped<INewsLogService, NewsLogService>();
 builder.Services.AddScoped<ITelegramService, TelegramService>();
 builder.Services.AddScoped<IPriceHistoryService, PriceHistoryService>();
 builder.Services.AddScoped<IEventTechnicalSnapshotService, EventTechnicalSnapshotService>();
-builder.Services.AddScoped<ISignalTrackService, SignalTrackService>();
-builder.Services.AddScoped<ISignalPricePointService, SignalPricePointService>();
 
 // AutoMapper (MappingProfile sýnýfýný referans alarak)
 builder.Services.AddAutoMapper(typeof(MappingProfile));

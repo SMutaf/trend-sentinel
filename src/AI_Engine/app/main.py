@@ -4,11 +4,10 @@ from datetime import datetime
 from app.core.config import Config
 from app.scrapers.yahoo_scraper import YahooFinanceScraper
 from app.engines.llm_engine import LLMEngine 
-from app.engines.technical_engine import TechnicalEngine
+from app.engines.technical_engine import TechnicalEngine # yeni eklenen engine
 from app.services.backend_service import BackendService
 import urllib3
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) # logdaki uyarıları anlık olarak göstememek için
 
 scraper = YahooFinanceScraper()
 llm_brain = LLMEngine()  
@@ -57,6 +56,8 @@ def job():
         impact = analysis.get('impactStrength', 1)
         confidence = analysis.get('confidenceScore', 0)
         direction = analysis.get('expectedDirection', 'Uncertain')
+        
+        # Sektör verisi
         detected_sector = analysis.get('sectorId', 0)
 
         if direction == "Up":
@@ -67,42 +68,14 @@ def job():
             sentiment = "Neutral"
 
         # 2. Aşama: TEKNİK ANALİZ (Fiyat/Grafik ne diyor?)
+        # Snapshot (Fiyat fotoğrafı) ve İndikatörleri (RSI, MACD) hesapla
         tech_data = tech_engine.evaluate_technicals(ticker, direction)
         
-        tech_score = tech_data.get('tech_score', 0)
-        vol_trend = tech_data.get('vol_trend', 'Weak')
-        vol_ratio = tech_data.get('vol_ratio', 0.0)
-
-        # STRATEJİ 1: BREAKOUT (Haber Patlaması)
-        is_breakout = (
-            impact >= 4 and
-            confidence >= 75 and
-            vol_ratio >= 1.5 and
-            vol_trend == "Strong"
-        )
-
-        # STRATEJİ 2: SLOW TREND (İstikrarlı Yükseliş)
-        is_slow_trend = (
-            impact >= 3 and
-            confidence >= 70 and
-            tech_score >= 2 and
-            vol_trend in ["Strong", "Moderate"]
-        )
-
-        # Ana Trend Kararı
-        is_trend = is_breakout or is_slow_trend
-
-        trend_reason = ""
-        if is_breakout: 
-            trend_reason = "BREAKOUT (Hacim Patlaması)"
-        elif is_slow_trend: 
-            trend_reason = "SLOW TREND (Teknik+Hacim)"
+        # Yeni Kantitatif Formül: AI Güveni + Teknik Onay (RSI ucuz mu/şişmiş mi?)
+        is_trend = (impact >= 4) and (confidence >= 75)
         
         if should_save or is_trend:
-            print(f"     Önemli Gelişme! (Trend: {is_trend})")
-            print(f"       Detay: LLM:{impact}/5, Güven:%{confidence}, Tech:{tech_score}, Hacim:{vol_trend} (x{vol_ratio})")
-            if is_trend:
-                print(f"       Strateji: {trend_reason}")
+            print(f"    Önemli Gelişme Tespit Edildi! (Trend: {is_trend}, LLM Etki: {impact}/5, Tech Puanı: {tech_data['tech_score']})")
             
             # Şirket yoksa önce şirketi C#'a kaydet
             if not company_id:
@@ -128,19 +101,21 @@ def job():
                     "impactStrength": impact,
                     "expectedDirection": direction,
                     "timeHorizon": analysis.get('timeHorizon', 'ShortTerm'),
-                    "overextendedRisk": tech_data['is_overextended'],
+                    "overextendedRisk": tech_data['is_overextended'], # Artık Teknik Motor Karar Veriyor !! burasının düzenlensmesi gereke
                     "confidenceScore": confidence
                 }
                 
+                # C#'tan dönen t NewsLog'u (ve ID'sini) yakala
                 saved_log = backend.send_log(log_payload)
                 
                 if saved_log and 'id' in saved_log:
                     news_log_id = saved_log['id']
                     print(f"    Haber veritabanına işlendi. (ID: {news_log_id[:8]}...)")
                     
+                    # Eğer fiyata dair Snapshot (Olay Anı Fotoğrafı) alınabilmişse
                     price_snapshot = tech_data.get('price_snapshot')
                     if price_snapshot:
-                        # 1. SAF FİYATLARI (PriceHistory) yolla
+                        # SAF FİYATLARI (PriceHistory) yolla -> NewsLogId ile eşleştirerek
                         price_payload = {
                             "newsLogId": news_log_id,
                             "date": price_snapshot['date'],
@@ -151,18 +126,8 @@ def job():
                             "volume": price_snapshot['volume']
                         }
                         backend.send_price_history(price_payload)
-
-                        # 2. 🆕 SignalTrack oluştur (SADECE trend ise)
-                        if is_trend:
-                            entry_price = price_snapshot['close']
-                            backend.create_signal_track(
-                                news_log_id=news_log_id,
-                                entry_price=entry_price,
-                                target_duration_days=10
-                            )
-                            print(f"    ✅ SignalTrack başlatıldı! (Entry: ${entry_price})")
                         
-                        # 3. TEKNİK İNDİKATÖRLERİ (EventTechnicalSnapshot) yolla
+                        # TEKNİK İNDİKATÖRLERİ (EventTechnicalSnapshot) yolla -> NewsLogId ile eşleştirerek
                         technical_payload = {
                             "newsLogId": news_log_id,
                             "rsiValue": tech_data['rsi'],

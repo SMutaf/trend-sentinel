@@ -211,113 +211,6 @@ namespace TrendSentinel.Infrastructure.Migrations
                     b.ToTable("PriceHistories");
                 });
 
-            modelBuilder.Entity("TrendSentinel.Domain.Entities.SignalPricePoint", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Close")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("CumulativeChangePercent")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("DayNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("High")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("Low")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal>("Open")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid>("SignalTrackId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<long>("Volume")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SignalTrackId", "DayNumber")
-                        .IsUnique();
-
-                    b.ToTable("SignalPricePoint");
-                });
-
-            modelBuilder.Entity("TrendSentinel.Domain.Entities.SignalTrack", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("ClosedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal?>("CurrentPrice")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("DaysElapsed")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("EntryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("EntryPrice")
-                        .HasColumnType("numeric");
-
-                    b.Property<decimal?>("MaxPerformancePercent")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid>("NewsLogId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("PeakDay")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal?>("PerformancePercent")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TargetDurationDays")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyId");
-
-                    b.HasIndex("NewsLogId")
-                        .IsUnique();
-
-                    b.HasIndex("Status", "EntryDate");
-
-                    b.ToTable("SignalTrack");
-                });
-
             modelBuilder.Entity("TrendSentinel.Domain.Entities.EventTechnicalSnapshot", b =>
                 {
                     b.HasOne("TrendSentinel.Domain.Entities.NewsLog", "NewsLog")
@@ -351,36 +244,6 @@ namespace TrendSentinel.Infrastructure.Migrations
                     b.Navigation("NewsLog");
                 });
 
-            modelBuilder.Entity("TrendSentinel.Domain.Entities.SignalPricePoint", b =>
-                {
-                    b.HasOne("TrendSentinel.Domain.Entities.SignalTrack", "SignalTrack")
-                        .WithMany("PricePoints")
-                        .HasForeignKey("SignalTrackId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("SignalTrack");
-                });
-
-            modelBuilder.Entity("TrendSentinel.Domain.Entities.SignalTrack", b =>
-                {
-                    b.HasOne("TrendSentinel.Domain.Entities.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("TrendSentinel.Domain.Entities.NewsLog", "NewsLog")
-                        .WithOne("SignalTrack")
-                        .HasForeignKey("TrendSentinel.Domain.Entities.SignalTrack", "NewsLogId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-
-                    b.Navigation("NewsLog");
-                });
-
             modelBuilder.Entity("TrendSentinel.Domain.Entities.Company", b =>
                 {
                     b.Navigation("NewsLogs");
@@ -390,14 +253,7 @@ namespace TrendSentinel.Infrastructure.Migrations
                 {
                     b.Navigation("PriceSnapshot");
 
-                    b.Navigation("SignalTrack");
-
                     b.Navigation("TechnicalSnapshot");
-                });
-
-            modelBuilder.Entity("TrendSentinel.Domain.Entities.SignalTrack", b =>
-                {
-                    b.Navigation("PricePoints");
                 });
 #pragma warning restore 612, 618
         }

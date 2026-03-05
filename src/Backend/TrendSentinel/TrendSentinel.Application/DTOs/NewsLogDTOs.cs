@@ -23,6 +23,8 @@ namespace TrendSentinel.Application.DTOs
         public string TimeHorizon { get; set; } = string.Empty;
         public bool OverextendedRisk { get; set; }
         public int ConfidenceScore { get; set; }
+
+        public int SectorId { get; set; }
     }
 
     public class NewsLogResponse

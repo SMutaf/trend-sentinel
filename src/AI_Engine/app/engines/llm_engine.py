@@ -42,6 +42,14 @@ class LLMEngine:
         3. Haber zaten fiyatlanmış olabilir mi?
         4. Bu haber "momentum continuation" mı yoksa "mean reversion risk" mi?
 
+        SEKTÖR ID KARŞILIĞI (sectorId için SADECE bu değerleri kullan):
+        0 = Other (Diğer / Bilinmiyor)
+        1 = Healthcare (Sağlık, İlaç, Biyoteknoloji)
+        2 = Technology (Yazılım, Yarı İletken, AI, SaaS)
+        3 = Energy (Petrol, Gaz, Yenilenebilir Enerji)
+        4 = Finance (Bankacılık, Kripto, Borsa, Fintech)
+        5 = Automotive (Otomotiv, Elektrikli Araç)
+
         YANIT FORMATI (Aşağıdaki anahtarlara sahip SADECE geçerli bir JSON dön):
         {{
             "shouldSave": true,

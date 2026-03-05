@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using TrendSentinel.Application.DTOs;
 using TrendSentinel.Application.Interfaces;
 using TrendSentinel.Domain.Entities;
+using TrendSentinel.Domain.Enums;
 using TrendSentinel.Domain.Interfaces;
 
 namespace TrendSentinel.Application.Services
@@ -13,11 +14,13 @@ namespace TrendSentinel.Application.Services
     {
         private readonly IAsyncRepository<NewsLog> _newsLogRepository;
         private readonly ITelegramService _telegramService;
+        private readonly IAsyncRepository<Company> _companyRepository;
         private readonly IMapper _mapper;
 
-        public NewsLogService(IAsyncRepository<NewsLog> newsLogRepository, ITelegramService telegramService, IMapper mapper)
+        public NewsLogService(IAsyncRepository<NewsLog> newsLogRepository, ITelegramService telegramService, IMapper mapper, IAsyncRepository<Company> companyRepository)
         {
             _newsLogRepository = newsLogRepository;
+            _companyRepository = companyRepository;
             _telegramService = telegramService;
             _mapper = mapper;
         }
@@ -26,6 +29,17 @@ namespace TrendSentinel.Application.Services
         {
             var newLog = _mapper.Map<NewsLog>(request);
             var createdLog = await _newsLogRepository.AddAsync(newLog);
+
+            if (request.SectorId > 0)
+            {
+                var companies = await _companyRepository.GetAsync(c => c.Id == request.CompanyId);
+                var company = companies.FirstOrDefault();
+                if (company != null && company.Sector == SectorType.Other)
+                {
+                    company.Sector = (SectorType)request.SectorId;
+                    await _companyRepository.UpdateAsync(company);
+                }
+            }
 
             // Trend KOntrolü eğer trend trigger olduysa bota mesaj at
             if (request.IsTrendTriggered)

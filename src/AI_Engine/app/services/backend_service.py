@@ -17,7 +17,7 @@ class BackendService:
 
     def create_company(self, name, ticker, sector_id=0):
         url = f"{self.base_url}/api/Companies" if not self.base_url.endswith("/api") else f"{self.base_url}/Companies"
-        payload = {"name": name, "tickerSymbol": ticker, "sectorId": sector_id}
+        payload = {"name": name, "tickerSymbol": ticker, "sector": sector_id}
         try:
             response = requests.post(url, json=payload, timeout=10, verify=False)
             response.raise_for_status()

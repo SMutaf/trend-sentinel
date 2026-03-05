@@ -47,6 +47,30 @@ namespace TrendSentinel.Infrastructure.Repositories
             return await _dbContext.Set<T>().FindAsync(id);
         }
 
+        public async Task<T> GetByIdWithIncludesAsync(Guid id, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = _dbContext.Set<T>();
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.FirstOrDefaultAsync(e => e.Id == id);
+        }
+
+        public async Task<IReadOnlyList<T>> GetWithIncludesAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = _dbContext.Set<T>().Where(predicate);
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.ToListAsync();
+        }
+
         public async Task UpdateAsync(T entity)
         {
             _dbContext.Entry(entity).State = EntityState.Modified;

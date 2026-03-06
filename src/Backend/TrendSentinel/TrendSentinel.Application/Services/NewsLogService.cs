@@ -7,6 +7,7 @@ using TrendSentinel.Application.DTOs;
 using TrendSentinel.Application.Interfaces;
 using TrendSentinel.Domain.Entities;
 using TrendSentinel.Domain.Interfaces;
+using TrendSentinel.Domain.Enums;
 
 namespace TrendSentinel.Application.Services
 {
@@ -14,15 +15,18 @@ namespace TrendSentinel.Application.Services
     {
         private readonly IAsyncRepository<NewsLog> _newsLogRepository;
         private readonly ITelegramService _telegramService;
+        private readonly IAsyncRepository<Company> _companyRepository;
         private readonly IMapper _mapper;
 
         public NewsLogService(
             IAsyncRepository<NewsLog> newsLogRepository,
+            IAsyncRepository<Company> companyRepository,
             ITelegramService telegramService,
             IMapper mapper)
         {
             _newsLogRepository = newsLogRepository;
             _telegramService = telegramService;
+            _companyRepository = companyRepository;
             _mapper = mapper;
         }
 
@@ -30,6 +34,18 @@ namespace TrendSentinel.Application.Services
         {
             var newLog = _mapper.Map<NewsLog>(request);
             var createdLog = await _newsLogRepository.AddAsync(newLog);
+
+            // sektör bilgisi
+            if (request.SectorId > 0)
+            {
+                var companies = await _companyRepository.GetAsync(c => c.Id == request.CompanyId);
+                var company = companies.FirstOrDefault();
+                if (company != null && company.Sector == SectorType.Other)
+                {
+                    company.Sector = (SectorType)request.SectorId;
+                    await _companyRepository.UpdateAsync(company);
+                }
+            }
 
             // Trend tetiklendiyse Telegram alert'i hazırla ve gönder
             if (request.IsTrendTriggered)

@@ -33,7 +33,7 @@ def job():
         history_logs = []
 
         if company_id:
-            history_logs = backend.get_recent_logs(company_id)
+            history_logs = backend.get_recent_logs(company_id, limit=5)
             print(f"    Hafıza: {len(history_logs)} geçmiş haber bulundu.")
             
             # --- MÜKERRER KONTROLÜ ---

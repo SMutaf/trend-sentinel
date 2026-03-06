@@ -26,10 +26,15 @@ class BackendService:
             print(f"Şirket Kayıt Hatası: {e}")
             return None
 
-    def get_recent_logs(self, company_id):
+    def get_recent_logs(self, company_id, limit=5):
         url = f"{self.base_url}/api/NewsLogs/company/{company_id}" if not self.base_url.endswith("/api") else f"{self.base_url}/NewsLogs/company/{company_id}"
         try:
-            response = requests.get(url, timeout=10, verify=False)
+            response = requests.get(
+                url,
+                params={"limit": limit},
+                timeout=10,
+                verify=False
+            )
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:

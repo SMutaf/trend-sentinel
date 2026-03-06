@@ -67,10 +67,11 @@ namespace TrendSentinel.Application.Services
             return _mapper.Map<NewsLogResponse>(createdLog);
         }
 
-        public async Task<List<NewsLogResponse>> GetNewsLogsByCompanyIdAsync(Guid companyId)
+        public async Task<List<NewsLogResponse>> GetNewsLogsByCompanyIdAsync(Guid companyId, int limit = 5)
         {
             var logs = await _newsLogRepository.GetAsync(n => n.CompanyId == companyId);
-            return _mapper.Map<List<NewsLogResponse>>(logs);
+            var recentLogs = logs.OrderByDescending(n => n.CreatedDate).Take(limit).ToList();
+            return _mapper.Map<List<NewsLogResponse>>(recentLogs);
         }
 
         //  Profesyonel alert formatlama metodu

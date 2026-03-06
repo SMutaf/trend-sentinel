@@ -8,6 +8,6 @@ namespace TrendSentinel.Application.Interfaces
     public interface INewsLogService
     {
         Task<NewsLogResponse> CreateNewsLogAsync(CreateNewsLogRequest request);
-        Task<List<NewsLogResponse>> GetNewsLogsByCompanyIdAsync(Guid companyId);
+        Task<List<NewsLogResponse>> GetNewsLogsByCompanyIdAsync(Guid companyId, int limit = 5);
     }
 }

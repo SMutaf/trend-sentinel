@@ -27,7 +27,8 @@ class BackendService:
             return None
 
     def get_recent_logs(self, company_id, limit=5):
-        url = f"{self.base_url}/api/NewsLogs/company/{company_id}" if not self.base_url.endswith("/api") else f"{self.base_url}/NewsLogs/company/{company_id}"
+        url = f"{self.base_url}/NewsLogs/{company_id}" if self.base_url.endswith("/api") else f"{self.base_url}/api/NewsLogs/{company_id}"
+
         try:
             response = requests.get(
                 url,
@@ -35,11 +36,18 @@ class BackendService:
                 timeout=10,
                 verify=False
             )
+
+            # 404 = Henüz haber yok, bu bir hata değil → boş liste dön
+            if response.status_code == 404:
+                print(f"    {company_id} için henüz geçmiş haber yok (404).")
+                return []
+
             response.raise_for_status()
             return response.json()
+
         except requests.exceptions.RequestException as e:
             print(f"Geçmiş Logları Çekme Hatası: {e}")
-            return []
+            return [] 
 
     def send_log(self, payload):
         """ Haberi kaydeder ve C# API'den dönen NewsLog nesnesini (ve ID'sini) geri döndürür. """

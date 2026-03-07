@@ -1,6 +1,6 @@
 import time
 import schedule
-from datetime import datetime
+from datetime import datetime, date
 from app.core.config import Config
 from app.core.enums import (
     SentimentType,
@@ -21,6 +21,41 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+#  RAM-BASED CACHE (Hafıza Kontrolü)
+processed_urls = set()  # İşlenmiş haber URL'leri (RAM'de)
+cache_date = date.today()  # Cache'in oluşturulduğu tarih
+
+def is_url_processed(url: str) -> bool:
+    """
+    URL'in daha önce işlenip işlenmediğini kontrol eder.
+    Gün değiştiğinde cache otomatik temizlenir.
+    """
+    global cache_date, processed_urls
+    
+    # Gün değiştiyse cache'i temizle
+    if date.today() != cache_date:
+        print(f"\nYeni gün başlıyor, cache temizleniyor...")
+        processed_urls.clear()
+        cache_date = date.today()
+    
+    # URL zaten işlenmiş mi?
+    if url in processed_urls:
+        return True
+    
+    return False
+
+def mark_url_as_processed(url: str):
+    """URL'i işlenmiş olarak işaretle (RAM cache'e ekle)"""
+    processed_urls.add(url)
+
+def get_cache_stats() -> dict:
+    """Cache istatistiklerini döndür"""
+    return {
+        "cached_urls": len(processed_urls),
+        "cache_date": cache_date.isoformat()
+    }
+
+# GLOBAL NESNELER
 scraper = YahooFinanceScraper()
 llm_brain = LLMEngine()
 tech_engine = TechnicalEngine()
@@ -28,6 +63,7 @@ backend = BackendService()
 
 def job():
     print(f"\n--- ZİNCİRLEME ANALİZ MODU: {datetime.now().strftime('%H:%M:%S')} ---")
+    print(f"Cache Durumu: {get_cache_stats()['cached_urls']} URL hafızada")
     
     existing_companies = backend.get_companies()
     existing_tickers = {c['tickerSymbol']: c['id'] for c in existing_companies}
@@ -39,19 +75,29 @@ def job():
             continue
         
         news = news_list[0]
+        news_url = news['link']
+        
         print(f"\n{ticker} İnceleniyor: '{news['title'][:40]}...'")
         
+        #HIZLI DUPLICATE KONTROLÜ (RAM CACHE)
+        if is_url_processed(news_url):
+            print(f"    Bu haber zaten işlenmiş (RAM Cache), pas geçiliyor.")
+            continue
+        
+        # VERİTABANI HAFIZA KONTROLÜ (Fallback)
         company_id = existing_tickers.get(ticker)
         history_logs = []
         if company_id:
             history_logs = backend.get_recent_logs(company_id, limit=5)
-            print(f"    Hafıza: {len(history_logs)} geçmiş haber bulundu.")
-        
-        # --- MÜKERRER KONTROLÜ ---
-        is_duplicate = any(log.get('url') == news['link'] for log in history_logs)
-        if is_duplicate:
-            print(f"    Bu haberi daha önce işlemişiz, pas geçiliyor.")
-            continue
+            print(f"     Veritabanı: {len(history_logs)} geçmiş haber bulundu.")
+            
+            # Veritabanında da var mı kontrol et (ek güvenlik)
+            is_duplicate = any(log.get('url') == news_url for log in history_logs)
+            if is_duplicate:
+                print(f"     Bu haberi daha önce işlemişiz (DB), pas geçiliyor.")
+                # RAM cache'e de ekle ki bir daha DB'ye gitmesin
+                mark_url_as_processed(news_url)
+                continue
         
         news_pub_date = news.get('pubDate', 'Bilinmiyor')
         
@@ -84,7 +130,6 @@ def job():
         vol_ratio = tech_data.get('vol_ratio', 0.0)
         
         # STRATEJİ 1: BREAKOUT (Yukarı Patlama)
-        # Çok güçlü haber + Hacim patlaması + Yüksek güven
         is_breakout = (
             direction == DirectionType.UP.value and
             impact >= 4 and
@@ -94,7 +139,6 @@ def job():
         )
         
         # STRATEJİ 2: SLOW TREND (İstikrarlı Yükseliş)
-        # İyi haber + Teknik puan iyi + Hacim destekliyor
         is_slow_trend = (
             direction == DirectionType.UP.value and
             impact >= 3 and
@@ -104,7 +148,6 @@ def job():
         )
         
         # STRATEJİ 3: BREAKDOWN (Aşağı Kırılım)
-        # Güçlü düşüş haberi + Teknik onay + Hacim baskısı
         is_breakdown = (
             direction == DirectionType.DOWN.value and
             impact >= 4 and
@@ -139,16 +182,16 @@ def job():
                 log_payload = {
                     "companyId": company_id,
                     "title": news['title'],
-                    "url": news['link'],
+                    "url": news_url,
                     "summary": news['summary'][:500],
                     "isTrendTriggered": is_trend,
                     "trendSummary": analysis.get('trendSummary', '')[:500],
-                    "sentimentLabel": sentiment,  # Enum formatında
+                    "sentimentLabel": sentiment,
                     "publishedDate": datetime.now().isoformat(),
-                    "eventType": analysis.get('eventType', NewsEventType.OTHER.value),  # Enum formatında
+                    "eventType": analysis.get('eventType', NewsEventType.OTHER.value),
                     "impactStrength": impact,
-                    "expectedDirection": direction,  # Enum formatında
-                    "timeHorizon": analysis.get('timeHorizon', TimeHorizonType.SHORT_TERM.value),  # Enum formatında
+                    "expectedDirection": direction,
+                    "timeHorizon": analysis.get('timeHorizon', TimeHorizonType.SHORT_TERM.value),
                     "overextendedRisk": tech_data['is_overextended'],
                     "confidenceScore": confidence,
                     "sectorId": detected_sector,
@@ -158,6 +201,9 @@ def job():
                 if saved_log and 'id' in saved_log:
                     news_log_id = saved_log['id']
                     print(f"    Haber veritabanına işlendi. (ID: {news_log_id[:8]}...)")
+                    
+                    #  BAŞARILI KAYIT: URL'i RAM cache'e ekle
+                    mark_url_as_processed(news_url)
                     
                     # Fiyat snapshot
                     price_snapshot = tech_data.get('price_snapshot')
@@ -198,7 +244,8 @@ def job():
     print(f"\nTur tamamlandı. {Config.CHECK_INTERVAL_MINUTES} dakika bekleniyor...")
 
 def start():
-    print("--- TREND SENTINEL V5: HEDGE FUND META MODEL ---")
+    print("--- TREND SENTINEL V6: RAM CACHE OPTIMIZED ---")
+    print(f"Cache Başlangıç Tarihi: {cache_date.isoformat()}")
     job()
     schedule.every(Config.CHECK_INTERVAL_MINUTES).minutes.do(job)
     while True:

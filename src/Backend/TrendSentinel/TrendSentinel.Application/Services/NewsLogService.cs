@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
+using System.Linq;
 using System.Threading.Tasks;
 using TrendSentinel.Application.DTOs;
 using TrendSentinel.Application.Interfaces;
@@ -35,7 +35,7 @@ namespace TrendSentinel.Application.Services
             var newLog = _mapper.Map<NewsLog>(request);
             var createdLog = await _newsLogRepository.AddAsync(newLog);
 
-            // sektör bilgisi
+            // Sektör bilgisi güncelleme
             if (request.SectorId > 0)
             {
                 var companies = await _companyRepository.GetAsync(c => c.Id == request.CompanyId);
@@ -47,10 +47,9 @@ namespace TrendSentinel.Application.Services
                 }
             }
 
-            // Trend tetiklendiyse Telegram alert'i hazırla ve gönder
-            if (request.IsTrendTriggered)
+            // Trend tetiklendiyse Telegram alert'i gönder
+            if (createdLog.ShouldTriggerAlert())
             {
-                //  Include ile tek sorguda tüm verileri çek
                 var logWithIncludes = await _newsLogRepository.GetByIdWithIncludesAsync(
                     createdLog.Id,
                     n => n.Company,
@@ -58,10 +57,11 @@ namespace TrendSentinel.Application.Services
                     n => n.PriceSnapshot
                 );
 
-                var alertMessage = FormatProfessionalAlert(logWithIncludes);
-
-                // Fire-and-forget: Telegram servisi ana akışı bloklamasın
-                _ = _telegramService.SendAlertAsync(alertMessage);
+                if (logWithIncludes != null)
+                {
+                    var alertMessage = FormatProfessionalAlert(logWithIncludes);
+                    _ = _telegramService.SendAlertAsync(alertMessage);
+                }
             }
 
             return _mapper.Map<NewsLogResponse>(createdLog);
@@ -69,73 +69,97 @@ namespace TrendSentinel.Application.Services
 
         public async Task<List<NewsLogResponse>> GetNewsLogsByCompanyIdAsync(Guid companyId, int limit = 5)
         {
-            var logs = await _newsLogRepository.GetAsync(n => n.CompanyId == companyId);
+            var logs = await _newsLogRepository.GetWithIncludesAsync(
+                n => n.CompanyId == companyId,
+                n => n.Company,
+                n => n.TechnicalSnapshot,
+                n => n.PriceSnapshot
+            );
+
             var recentLogs = logs.OrderByDescending(n => n.CreatedDate).Take(limit).ToList();
             return _mapper.Map<List<NewsLogResponse>>(recentLogs);
         }
 
-        //  Profesyonel alert formatlama metodu
+        // Profesyonel alert formatlama metodu
         private string FormatProfessionalAlert(NewsLog log)
         {
             var publishedAt = log.PublishedDate.ToString("dd MMM yyyy HH:mm");
-            var sentimentEmoji = log.SentimentLabel.ToLower() switch
+
+            // Value Object'ten sentiment al
+            var sentiment = log.Analysis?.Sentiment ?? SentimentType.Neutral;
+            var sentimentEmoji = sentiment switch
             {
-                "positive" => "🟢",
-                "negative" => "🔴",
-                "neutral" => "🟡",
-                _ => "⚪"
+                SentimentType.Positive => "🟢",
+                SentimentType.Negative => "🔴",
+                _ => "🟡"
             };
 
-            var directionEmoji = log.ExpectedDirection?.ToLower() switch
+            // Value Object'ten direction al
+            var direction = log.QuantMetrics?.ExpectedDirection ?? DirectionType.Uncertain;
+            var directionEmoji = direction switch
             {
-                "up" => "📈",
-                "down" => "📉",
+                DirectionType.Up => "📈",
+                DirectionType.Down => "📉",
                 _ => "➡️"
             };
 
-            var message = $"*{sentimentEmoji} YAPAY ZEKA TREND ALARMI {directionEmoji}*\n\n";
+            var message = $"*{sentimentEmoji} YAPAY ZEKA TREND ALARMI {directionEmoji}*\n";
 
-            // Company 
+            // Company
             message += $"* Şirket:* {log.Company?.TickerSymbol ?? "N/A"} ({log.Company?.Name ?? "Bilinmiyor"})\n";
             message += $"* Başlık:* {log.Title}\n";
             message += $"* Yayın Tarihi:* `{publishedAt}`\n\n";
 
             // AI Analiz Bölümü
-            message += $"* AI Temel Analiz*\n";
-            message += $"_Trend:_ {log.TrendSummary}\n";
-            message += $"*Sentiment:* {log.SentimentLabel} | *Güven:* %{log.ConfidenceScore}\n";
-            message += $"*Etki:* {log.ImpactStrength}/5 | *Tip:* {log.EventType}\n";
-            message += $"*Beklenen Yön:* {log.ExpectedDirection} | *Süre:* {log.TimeHorizon}\n\n";
+            if (log.Analysis != null)
+            {
+                message += $"*🤖 AI Temel Analiz*\n";
+                message += $"_Trend:_ {log.Analysis.TrendSummary}\n";
+                message += $"*Sentiment:* {log.Analysis.Sentiment} | *Güven:* %{log.Analysis.ConfidenceScore}\n";
+            }
 
-            // teknik Analiz Bölümü (Varsa)
+            // Quant Bölümü
+            if (log.QuantMetrics != null)
+            {
+                var metrics = log.QuantMetrics;
+                message += $"*📊 Algoritmik Sinyal*\n";
+                message += $"*Etki:* {metrics.ImpactStrength}/5 | *Tip:* {metrics.EventType}\n";
+                message += $"*Beklenen Yön:* {metrics.ExpectedDirection} | *Süre:* {metrics.TimeHorizon}\n";
+                message += $"*Şişme Riski:* {(metrics.OverextendedRisk ? "⚠️ EVET" : "✅ Hayır")}\n";
+            }
+
+            // Teknik Analiz Bölümü (Varsa)
             if (log.TechnicalSnapshot != null)
             {
                 var tech = log.TechnicalSnapshot;
                 var rsiStatus = tech.RsiValue > 70 ? "*(Aşırı Alım)*" :
                                 tech.RsiValue < 30 ? "*(Aşırı Satım)*" : "";
 
-                message += $"* Teknik Göstergeler (Olay Anı)*\n";
+                message += $"\n*📈 Teknik Göstergeler (Olay Anı)*\n";
                 message += $"*RSI:* {tech.RsiValue:F1} {rsiStatus}\n";
                 message += $"*MACD:* `{tech.MacdState}`\n";
                 message += $"*Teknik Skor:* {tech.TechScore}/100\n";
-                message += $"*Aşırı Uzama Riski:* {(tech.IsOverextended ? "EVET" : "Hayır")}\n";
+                message += $"*Aşırı Uzama:* {(tech.IsOverextended ? "⚠️ EVET" : "✅ Hayır")}\n";
 
                 // Volume Analizi
-                message += $"\n*🔊 Hacim Analizi*\n";
-                message += $"*VolRatio:* {tech.VolRatio:F2}x | *Trend:* {tech.VolTrend}\n";
-                message += $"*Ort. Üstü Gün (Son 5):* {tech.AboveAvgDaysLast5}/5\n";
+                if (tech.VolRatio > 0)
+                {
+                    message += $"\n*🔊 Hacim Analizi*\n";
+                    message += $"*VolRatio:* {tech.VolRatio:F2}x | *Trend:* {tech.VolTrend}\n";
+                    message += $"*Ort. Üstü Gün (Son 5):* {tech.AboveAvgDaysLast5}/5\n";
+                }
             }
 
             // Fiyat Bilgisi (Varsa)
             if (log.PriceSnapshot != null)
             {
                 var price = log.PriceSnapshot;
-                message += $"\n* Fiyat Bilgisi (Olay Anı)*\n";
+                message += $"\n*💰 Fiyat Bilgisi (Olay Anı)*\n";
                 message += $"*Kapanış:* ${price.Close:F2} | *Hacim:* {price.Volume:N0}\n";
             }
 
             // Link ve Footer
-            message += $"\n [Haberi İncele]({log.Url})\n";
+            message += $"\n[Haberi İncele]({log.Url})\n";
 
             return message;
         }

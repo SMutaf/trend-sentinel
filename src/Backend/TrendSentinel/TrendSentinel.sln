@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36221.1 d17.14
+VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrendSentinel.Domain", "TrendSentinel.Domain\TrendSentinel.Domain.csproj", "{16450857-1211-4615-A758-895996CA20CC}"
 EndProject
@@ -10,6 +10,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrendSentinel.Infrastructure", "TrendSentinel.Infrastructure\TrendSentinel.Infrastructure.csproj", "{1CD3EAE0-766A-4451-ABA4-9E0E45F52527}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrendSentinel.API", "TrendSentinel.API\TrendSentinel.API.csproj", "{040EFF09-C73F-4863-8AF2-762441AD2031}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrendSentinel.Backtest", "TrendSentinel.Backtest\TrendSentinel.Backtest.csproj", "{68107D05-7860-49F5-9BBE-32D3820D1723}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YahooPriceTester", "YahooPriceTester\YahooPriceTester.csproj", "{E0D9A3DC-52B0-450A-AC1E-1D612D92FE86}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +37,14 @@ Global
 		{040EFF09-C73F-4863-8AF2-762441AD2031}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{040EFF09-C73F-4863-8AF2-762441AD2031}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{040EFF09-C73F-4863-8AF2-762441AD2031}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68107D05-7860-49F5-9BBE-32D3820D1723}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68107D05-7860-49F5-9BBE-32D3820D1723}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68107D05-7860-49F5-9BBE-32D3820D1723}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68107D05-7860-49F5-9BBE-32D3820D1723}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0D9A3DC-52B0-450A-AC1E-1D612D92FE86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0D9A3DC-52B0-450A-AC1E-1D612D92FE86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0D9A3DC-52B0-450A-AC1E-1D612D92FE86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0D9A3DC-52B0-450A-AC1E-1D612D92FE86}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
